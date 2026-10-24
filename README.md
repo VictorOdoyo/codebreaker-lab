@@ -52,7 +52,7 @@ npm run format:check
 
 Python 3.10+ is sufficient; reference checks use only its standard library. Set `BROWSER_EXECUTABLE` to a Chromium-family executable for an existing local browser, or install Playwright Chromium. CI tests Windows and Linux, Chromium, package installation, formatting, benchmarks, and independent oracles.
 
-Current checks include **65 Node tests**, **34 browser checks**, **8,971 independent oracle cases**, an exhaustive **1,296-secret** audit, **90 paired runs**, and **17 controlled cipher recoveries**. See [validation](docs/validation.md) for what these checks establish and what they do not.
+Current checks include **65 Node tests**, **35 browser checks**, **8,971 independent oracle cases**, an exhaustive **1,296-secret** audit, **90 paired runs**, and **17 controlled cipher recoveries**. See [validation](docs/validation.md) for what these checks establish and what they do not.
 
 ## Reading the claims
 

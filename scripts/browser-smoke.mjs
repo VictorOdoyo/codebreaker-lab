@@ -80,8 +80,12 @@ try {
   check(JSON.parse(readFileSync(await (await experimentExport).path(),'utf8')).rows.length===3,'experiment report export');
   await page.setViewportSize({width:390,height:844});
   for(const name of ['deduction','cipher','audit']){await view(name);check(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'narrow viewport '+name);}
+  await view('deduction');
+  await page.locator('#pool').selectOption('sample');await idle();
+  await page.locator('#length').selectOption('6');await page.locator('#colors').selectOption('4');await click('new-game');
+  check(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'six-position narrow layout');
   await page.setViewportSize({width:1512,height:1120});await view('deduction');
-  await click('load-demo');
+  await click('load-demo');await page.locator('#pool').selectOption('all');await idle();
   mkdirSync(new URL('../results/',import.meta.url),{recursive:true});
   await page.screenshot({path:fileURLToPath(new URL('../results/workspace.png',import.meta.url)),fullPage:true});
   check(errors.length===0,'no unhandled browser exceptions: '+errors.join('; '));

@@ -24,7 +24,7 @@ npm run benchmark requires: complete standard minimax coverage (1,296 secrets, m
 
 ## Real browser tests
 
-npm run test:browser starts an owned ephemeral HTTP server and a headless Chromium-family browser. It checks 34 conditions across transcript editing, contradiction rejection, replay, seeded scope labeling, JSON/CSV exports, atomic imports, rule bounds, twelve modes, evidence charts, Vigenère/columnar search, crib locks, annealing traces, cancellation, full audit, paired experiments, and three narrow-view layouts. It asserts no uncaught page exceptions and saves results/workspace.png. Finally blocks close the browser and server.
+npm run test:browser starts an owned ephemeral HTTP server and a headless Chromium-family browser. It checks 35 conditions across transcript editing, contradiction rejection, replay, seeded scope labeling, JSON/CSV exports, atomic imports, rule bounds, twelve modes, evidence charts, Vigenère/columnar search, crib locks, annealing traces, cancellation, full audit, paired experiments, and three narrow-view layouts. It asserts no uncaught page exceptions and saves results/workspace.png. Finally blocks close the browser and server.
 
 ## Packaging and CI
 
