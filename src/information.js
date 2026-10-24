@@ -1,0 +1,2 @@
+export function information(counts){const n=counts.reduce((a,b)=>a+b,0);if(!n)return {entropy:0,expectedRemaining:0,worstCase:0,branches:0,collision:0};let entropy=0,squares=0;for(const c of counts){if(c){const p=c/n;entropy-=p*Math.log2(p);squares+=c*c;}}return {entropy,expectedRemaining:squares/n,worstCase:Math.max(...counts),branches:counts.filter(Boolean).length,collision:squares/(n*n)};}
+export function posteriorBits(count){return count>0?Math.log2(count):0;}
