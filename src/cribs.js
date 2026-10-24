@@ -1,0 +1,4 @@
+import {letters,ALPHABET} from './alphabet.js';
+import {integer} from './validate.js';
+export function cribMappings(ciphertext,plaintext,offset=0){const c=letters(ciphertext),p=letters(plaintext);integer(offset,0,c.length,'offset');if(!p.length||offset+p.length>c.length)throw new RangeError('Crib must fit normalized ciphertext');const forward={},reverse={};for(let i=0;i<p.length;i++){const a=p[i],b=c[offset+i];if((forward[a]&&forward[a]!==b)||(reverse[b]&&reverse[b]!==a))return {consistent:false,mapping:{},reason:'Crib violates one-to-one substitution'};forward[a]=b;reverse[b]=a;}return {consistent:true,mapping:forward,offset,coverage:Object.keys(forward).length};}
+export function cribPlacements(ciphertext,plaintext){const c=letters(ciphertext),p=letters(plaintext);if(!p.length||p.length>c.length)return [];const out=[];for(let i=0;i<=c.length-p.length;i++){const r=cribMappings(c,p,i);if(r.consistent)out.push(r);}return out;}
