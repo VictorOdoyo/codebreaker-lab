@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { createServer } from '../src/server.js';
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -82,7 +83,7 @@ try {
   await page.setViewportSize({width:1512,height:1120});await view('deduction');
   await click('load-demo');
   mkdirSync(new URL('../results/',import.meta.url),{recursive:true});
-  await page.screenshot({path:new URL('../results/workspace.png',import.meta.url).pathname.replace(/^\/([A-Z]:)/,'$1'),fullPage:true});
+  await page.screenshot({path:fileURLToPath(new URL('../results/workspace.png',import.meta.url)),fullPage:true});
   check(errors.length===0,'no unhandled browser exceptions: '+errors.join('; '));
   console.log(JSON.stringify({status:'passed',checks,browser:await browser.version()},null,2));
 } finally {
