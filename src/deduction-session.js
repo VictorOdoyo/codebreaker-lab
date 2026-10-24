@@ -1,0 +1,4 @@
+import {createScorer} from './scorer.js';
+import {replay} from './candidates.js';
+import {explainContradiction} from './contradiction.js';
+export class DeductionSession{constructor(input={},history=[]){this.scorer=createScorer(input);this.history=structuredClone(history);if(!replay(this.scorer,this.history).ids.length)throw new RangeError('Inconsistent initial history');}get state(){const r=replay(this.scorer,this.history);return {...r,rules:this.scorer.rules,history:structuredClone(this.history)};}add(guess,response){const h=[...this.history,{guess:[...guess],response:{...response}}],r=replay(this.scorer,h);if(!r.ids.length)return {accepted:false,conflict:explainContradiction(this.scorer,h)};this.history=h;return {accepted:true,...this.state};}undo(){this.history.pop();return this.state;}reset(){this.history=[];return this.state;}}
