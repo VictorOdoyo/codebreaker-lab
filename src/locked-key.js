@@ -1,3 +1,21 @@
-import {ALPHABET} from './alphabet.js';
-import {substitutionKey} from './substitution.js';
-export function lockedKey(base,mapping={}){substitutionKey(base);const entries=Object.entries(mapping);if(entries.some(([a,b])=>!/^[A-Z]$/.test(a)||typeof b!=='string'||!/^[A-Z]$/.test(b))||new Set(entries.map(x=>x[1])).size!==entries.length)throw new RangeError('Locks must be a one-to-one uppercase letter mapping');const key=Array.from(base);for(const [p,c] of entries){const i=ALPHABET.indexOf(p),j=key.indexOf(c);[key[i],key[j]]=[key[j],key[i]];}return {key:key.join(''),mutable:Array.from(ALPHABET,(_,i)=>i).filter(i=>!Object.hasOwn(mapping,ALPHABET[i]))};}
+import { ALPHABET } from './alphabet.js';
+import { substitutionKey } from './substitution.js';
+export function lockedKey(base, mapping = {}) {
+  substitutionKey(base);
+  const entries = Object.entries(mapping);
+  if (
+    entries.some(([a, b]) => !/^[A-Z]$/.test(a) || typeof b !== 'string' || !/^[A-Z]$/.test(b)) ||
+    new Set(entries.map((x) => x[1])).size !== entries.length
+  )
+    throw new RangeError('Locks must be a one-to-one uppercase letter mapping');
+  const key = Array.from(base);
+  for (const [p, c] of entries) {
+    const i = ALPHABET.indexOf(p),
+      j = key.indexOf(c);
+    [key[i], key[j]] = [key[j], key[i]];
+  }
+  return {
+    key: key.join(''),
+    mutable: Array.from(ALPHABET, (_, i) => i).filter((i) => !Object.hasOwn(mapping, ALPHABET[i])),
+  };
+}

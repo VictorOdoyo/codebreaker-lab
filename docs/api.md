@@ -10,7 +10,10 @@ const game = new DeductionSession({ length: 3, colors: 4, repeats: false });
 const reply = game.add([0, 1, 2], { exact: 1, misplaced: 1 });
 if (!reply.accepted) console.log(reply.conflict.rows); // zero-based row indexes
 const next = rankGuesses(game.scorer, game.state.ids, {
-  strategy: 'entropy', pool: 'all', budget: 20000000, limit: 8,
+  strategy: 'entropy',
+  pool: 'all',
+  budget: 20000000,
+  limit: 8,
 });
 console.log(next.rows[0], next.complete, next.exactGlobal);
 game.undo();
@@ -47,9 +50,7 @@ trainModel(text,{order,alpha}) creates a Map-based model for in-process use; lan
 ```js
 import { filterWords, wordFeedback, rankWords } from './src/index.js';
 const words = ['APPLE', 'AMPLE', 'MAPLE', 'ANGLE'];
-const candidates = filterWords(words, [
-  { guess: 'ANGLE', marks: wordFeedback('APPLE', 'ANGLE') },
-]);
+const candidates = filterWords(words, [{ guess: 'ANGLE', marks: wordFeedback('APPLE', 'ANGLE') }]);
 if (candidates.length) console.log(rankWords(candidates, words).rows[0]);
 ```
 

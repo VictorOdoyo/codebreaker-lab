@@ -17,7 +17,13 @@ try {
       ),
     )[0],
     files = packed.files.map((f) => f.path);
-  for (const file of ['src/index.js', 'src/ranking.js', 'web/index.html', 'web/worker.js', 'LICENSE'])
+  for (const file of [
+    'src/index.js',
+    'src/ranking.js',
+    'web/index.html',
+    'web/worker.js',
+    'LICENSE',
+  ])
     assert(files.includes(file), file);
   assert(
     !files.some(
@@ -45,9 +51,9 @@ try {
   );
   const installed = path.join(dir, 'node_modules', '@victorodoyo', 'codebreaker-lab'),
     api = await import(pathToFileURL(path.join(installed, 'src/index.js'))),
-    r = api.solveSecret(api.createScorer({length:2,colors:3}), [2,1]);
+    r = api.solveSecret(api.createScorer({ length: 2, colors: 3 }), [2, 1]);
   assert.equal(r.status, 'solved');
-  assert.equal(api.vigenere('ATTACKATDAWN','LEMON'), 'LXFOPVEFRNHR');
+  assert.equal(api.vigenere('ATTACKATDAWN', 'LEMON'), 'LXFOPVEFRNHR');
   const { createServer } = await import(pathToFileURL(path.join(installed, 'src/server.js')));
   server = createServer();
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));

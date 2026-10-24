@@ -6,90 +6,222 @@ import { createServer } from '../src/server.js';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const server = createServer();
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
-const browser = await chromium.launch({ headless: true, ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {}) });
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {}),
+});
 const page = await browser.newPage({ viewport: { width: 1512, height: 1120 } });
 const errors = [];
-page.on('pageerror', e => errors.push(e.message));
+page.on('pageerror', (e) => errors.push(e.message));
 let checks = 0;
-function check(value, label) { assert(value, label); checks++; }
-const wait = fn => page.waitForFunction(fn, null, {timeout:40000});
+function check(value, label) {
+  assert(value, label);
+  checks++;
+}
+const wait = (fn) => page.waitForFunction(fn, null, { timeout: 40000 });
 const idle = () => wait(() => document.querySelector('#cancel').hidden);
-const click = async id => { await page.locator('#'+id).click(); await idle(); };
-const view = async name => { await page.locator('[data-view="'+name+'"]').click(); await idle(); };
+const click = async (id) => {
+  await page.locator('#' + id).click();
+  await idle();
+};
+const view = async (name) => {
+  await page.locator('[data-view="' + name + '"]').click();
+  await idle();
+};
 try {
-  await page.goto('http://127.0.0.1:'+server.address().port);
+  await page.goto('http://127.0.0.1:' + server.address().port);
   await wait(() => document.querySelector('#status').textContent.startsWith('Evidence updated'));
-  check(await page.locator('#remaining').innerText()==='48','guided transcript candidates');
-  check(await page.locator('.history-row').count()===2,'transcript rows');
-  check(await page.locator('.candidate').count()===24,'bounded candidate preview');
+  check((await page.locator('#remaining').innerText()) === '48', 'guided transcript candidates');
+  check((await page.locator('.history-row').count()) === 2, 'transcript rows');
+  check((await page.locator('.candidate').count()) === 24, 'bounded candidate preview');
   await click('use-best');
-  check((await page.locator('#guess').inputValue()).length===4,'recommended guess selection');
+  check((await page.locator('#guess').inputValue()).length === 4, 'recommended guess selection');
   await page.locator('#guess').fill('0011');
   await page.locator('#exact').fill('4');
   await page.locator('#misplaced').fill('0');
   await click('add-feedback');
-  check((await page.locator('#deduction-error').innerText()).includes('Conflicting feedback'),'contradiction explanation');
-  check(await page.locator('.history-row').count()===2,'contradiction leaves transcript unchanged');
-  await click('use-best');await click('adversary');
-  check(Number(await page.locator('#remaining').innerText())<48,'adaptive adversary branch reduction');
+  check(
+    (await page.locator('#deduction-error').innerText()).includes('Conflicting feedback'),
+    'contradiction explanation',
+  );
+  check(
+    (await page.locator('.history-row').count()) === 2,
+    'contradiction leaves transcript unchanged',
+  );
+  await click('use-best');
+  await click('adversary');
+  check(
+    Number(await page.locator('#remaining').innerText()) < 48,
+    'adaptive adversary branch reduction',
+  );
   await click('undo');
-  check(await page.locator('#remaining').innerText()==='48','undo exact replay');
-  await page.locator('#strategy').selectOption('entropy');await idle();
-  await page.locator('#pool').selectOption('sample');await idle();
-  check((await page.locator('#search-scope').innerText()).includes('RESTRICTED POOL'),'sample ranking scope');
-  const savedEvent=page.waitForEvent('download');await page.locator('#save-session').click();
-  const saved=JSON.parse(readFileSync(await (await savedEvent).path(),'utf8'));
-  check(saved.version===1&&saved.strategy==='entropy'&&saved.pool==='sample','session export preserves strategy');
-  const csvEvent=page.waitForEvent('download');await page.locator('#export-transcript').click();
-  check(readFileSync(await (await csvEvent).path(),'utf8').startsWith('turn,guess,exact,misplaced'),'CSV transcript download');
-  const imported={version:1,kind:'deduction',rules:{length:2,colors:3,repeats:false},history:[],strategy:'expected',pool:'candidates'};
-  await page.locator('#import-session').setInputFiles({name:'case.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(imported))});await idle();
-  await wait(()=>document.querySelector('#remaining').textContent==='6');
-  check(!(await page.locator('#repeats').isChecked()),'imported unique-symbol rules');
-  check(await page.locator('#strategy').inputValue()==='expected','imported strategy');
-  await page.locator('#import-session').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{"version":99}')});
-  await wait(()=>document.querySelector('#deduction-error').textContent.includes('Unsupported'));
-  check(await page.locator('#remaining').innerText()==='6','invalid import preserves case');
-  await page.locator('#length').selectOption('6');await page.locator('#colors').selectOption('10');await page.locator('#repeats').check();await click('new-game');
-  check((await page.locator('#deduction-error').innerText()).includes('4096'),'oversized code space rejected');
-  await click('load-demo');await page.locator('#strategy').selectOption('minimax');await idle();await page.locator('#pool').selectOption('all');await idle();
+  check((await page.locator('#remaining').innerText()) === '48', 'undo exact replay');
+  await page.locator('#strategy').selectOption('entropy');
+  await idle();
+  await page.locator('#pool').selectOption('sample');
+  await idle();
+  check(
+    (await page.locator('#search-scope').innerText()).includes('RESTRICTED POOL'),
+    'sample ranking scope',
+  );
+  const savedEvent = page.waitForEvent('download');
+  await page.locator('#save-session').click();
+  const saved = JSON.parse(readFileSync(await (await savedEvent).path(), 'utf8'));
+  check(
+    saved.version === 1 && saved.strategy === 'entropy' && saved.pool === 'sample',
+    'session export preserves strategy',
+  );
+  const csvEvent = page.waitForEvent('download');
+  await page.locator('#export-transcript').click();
+  check(
+    readFileSync(await (await csvEvent).path(), 'utf8').startsWith('turn,guess,exact,misplaced'),
+    'CSV transcript download',
+  );
+  const imported = {
+    version: 1,
+    kind: 'deduction',
+    rules: { length: 2, colors: 3, repeats: false },
+    history: [],
+    strategy: 'expected',
+    pool: 'candidates',
+  };
+  await page.locator('#import-session').setInputFiles({
+    name: 'case.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(imported)),
+  });
+  await idle();
+  await wait(() => document.querySelector('#remaining').textContent === '6');
+  check(!(await page.locator('#repeats').isChecked()), 'imported unique-symbol rules');
+  check((await page.locator('#strategy').inputValue()) === 'expected', 'imported strategy');
+  await page.locator('#import-session').setInputFiles({
+    name: 'bad.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{"version":99}'),
+  });
+  await wait(() => document.querySelector('#deduction-error').textContent.includes('Unsupported'));
+  check((await page.locator('#remaining').innerText()) === '6', 'invalid import preserves case');
+  await page.locator('#length').selectOption('6');
+  await page.locator('#colors').selectOption('10');
+  await page.locator('#repeats').check();
+  await click('new-game');
+  check(
+    (await page.locator('#deduction-error').innerText()).includes('4096'),
+    'oversized code space rejected',
+  );
+  await click('load-demo');
+  await page.locator('#strategy').selectOption('minimax');
+  await idle();
+  await page.locator('#pool').selectOption('all');
+  await idle();
   await view('cipher');
-  check(await page.locator('#cipher-kind option').count()===12,'all cipher modes selectable');
-  check(await page.locator('#frequency-chart rect').count()===26,'letter frequency chart');
-  check(await page.locator('#period-chart rect').count()===16,'period evidence chart');
+  check((await page.locator('#cipher-kind option').count()) === 12, 'all cipher modes selectable');
+  check((await page.locator('#frequency-chart rect').count()) === 26, 'letter frequency chart');
+  check((await page.locator('#period-chart rect').count()) === 16, 'period evidence chart');
   await click('search-key');
-  check((await page.locator('#hypotheses code').first().innerText())==='RIVER','Vigenere challenge key recovery');
-  check((await page.locator('#cipher-output').innerText()).startsWith('THE RIVER STATION'),'recovered plaintext');
-  await page.locator('#cipher-kind').selectOption('caesar');await page.locator('#cipher-input').fill('Dwwdfn dw Gdzq!');await page.locator('#cipher-shift').fill('3');await click('transform');
-  check(await page.locator('#cipher-output').innerText()==='Attack at Dawn!','formatted cipher transformation');
-  await page.locator('#challenge').selectOption('columns');await idle();await click('search-key');
-  check((await page.locator('#hypothesis-scope').innerText()).includes('24 evaluated'),'complete columnar enumeration');
-  await page.locator('#challenge').selectOption('workshop');await idle();await page.locator('#iterations').fill('100');await page.locator('#restarts').fill('1');await page.locator('#crib').fill('THE RIVER');await click('search-key');
-  check((await page.locator('#cipher-output').innerText()).startsWith('THE RIVER'),'substitution crib locks');
-  check(await page.locator('#anneal-chart svg').count()===1,'annealing trace');
-  const cipherExport=page.waitForEvent('download');await page.locator('#export-cipher').click();
-  check(JSON.parse(readFileSync(await (await cipherExport).path(),'utf8')).result.seed===42,'reproducible cipher report');
-  await view('audit');await page.locator('#audit-run').click();await page.locator('#cancel').click();await idle();
-  check((await page.locator('#status').innerText()).toLowerCase().includes('cancel'),'worker cancellation');
+  check(
+    (await page.locator('#hypotheses code').first().innerText()) === 'RIVER',
+    'Vigenere challenge key recovery',
+  );
+  check(
+    (await page.locator('#cipher-output').innerText()).startsWith('THE RIVER STATION'),
+    'recovered plaintext',
+  );
+  await page.locator('#cipher-kind').selectOption('caesar');
+  await page.locator('#cipher-input').fill('Dwwdfn dw Gdzq!');
+  await page.locator('#cipher-shift').fill('3');
+  await click('transform');
+  check(
+    (await page.locator('#cipher-output').innerText()) === 'Attack at Dawn!',
+    'formatted cipher transformation',
+  );
+  await page.locator('#challenge').selectOption('columns');
+  await idle();
+  await click('search-key');
+  check(
+    (await page.locator('#hypothesis-scope').innerText()).includes('24 evaluated'),
+    'complete columnar enumeration',
+  );
+  await page.locator('#challenge').selectOption('workshop');
+  await idle();
+  await page.locator('#iterations').fill('100');
+  await page.locator('#restarts').fill('1');
+  await page.locator('#crib').fill('THE RIVER');
+  await click('search-key');
+  check(
+    (await page.locator('#cipher-output').innerText()).startsWith('THE RIVER'),
+    'substitution crib locks',
+  );
+  check((await page.locator('#anneal-chart svg').count()) === 1, 'annealing trace');
+  const cipherExport = page.waitForEvent('download');
+  await page.locator('#export-cipher').click();
+  check(
+    JSON.parse(readFileSync(await (await cipherExport).path(), 'utf8')).result.seed === 42,
+    'reproducible cipher report',
+  );
+  await view('audit');
+  await page.locator('#audit-run').click();
+  await page.locator('#cancel').click();
+  await idle();
+  check(
+    (await page.locator('#status').innerText()).toLowerCase().includes('cancel'),
+    'worker cancellation',
+  );
   await click('audit-run');
-  check((await page.locator('#audit-result').innerText()).includes('1296/1296'),'exhaustive browser audit');
-  check(await page.locator('#audit-result strong').nth(1).innerText()==='5','five-turn maximum');
-  await page.locator('#experiment-count').fill('3');await click('compare-run');
-  check(await page.locator('#compare-result tbody tr').count()===3,'paired browser strategy comparison');
-  const experimentExport=page.waitForEvent('download');await page.locator('#export-experiment').click();
-  check(JSON.parse(readFileSync(await (await experimentExport).path(),'utf8')).rows.length===3,'experiment report export');
-  await page.setViewportSize({width:390,height:844});
-  for(const name of ['deduction','cipher','audit']){await view(name);check(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'narrow viewport '+name);}
+  check(
+    (await page.locator('#audit-result').innerText()).includes('1296/1296'),
+    'exhaustive browser audit',
+  );
+  check(
+    (await page.locator('#audit-result strong').nth(1).innerText()) === '5',
+    'five-turn maximum',
+  );
+  await page.locator('#experiment-count').fill('3');
+  await click('compare-run');
+  check(
+    (await page.locator('#compare-result tbody tr').count()) === 3,
+    'paired browser strategy comparison',
+  );
+  const experimentExport = page.waitForEvent('download');
+  await page.locator('#export-experiment').click();
+  check(
+    JSON.parse(readFileSync(await (await experimentExport).path(), 'utf8')).rows.length === 3,
+    'experiment report export',
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const name of ['deduction', 'cipher', 'audit']) {
+    await view(name);
+    check(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      'narrow viewport ' + name,
+    );
+  }
   await view('deduction');
-  await page.locator('#pool').selectOption('sample');await idle();
-  await page.locator('#length').selectOption('6');await page.locator('#colors').selectOption('4');await click('new-game');
-  check(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'six-position narrow layout');
-  await page.setViewportSize({width:1512,height:1120});await view('deduction');
-  await click('load-demo');await page.locator('#pool').selectOption('all');await idle();
-  mkdirSync(new URL('../results/',import.meta.url),{recursive:true});
-  await page.screenshot({path:fileURLToPath(new URL('../results/workspace.png',import.meta.url)),fullPage:true});
-  check(errors.length===0,'no unhandled browser exceptions: '+errors.join('; '));
-  console.log(JSON.stringify({status:'passed',checks,browser:await browser.version()},null,2));
+  await page.locator('#pool').selectOption('sample');
+  await idle();
+  await page.locator('#length').selectOption('6');
+  await page.locator('#colors').selectOption('4');
+  await click('new-game');
+  check(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    'six-position narrow layout',
+  );
+  await page.setViewportSize({ width: 1512, height: 1120 });
+  await view('deduction');
+  await click('load-demo');
+  await page.locator('#pool').selectOption('all');
+  await idle();
+  mkdirSync(new URL('../results/', import.meta.url), { recursive: true });
+  await page.screenshot({
+    path: fileURLToPath(new URL('../results/workspace.png', import.meta.url)),
+    fullPage: true,
+  });
+  check(errors.length === 0, 'no unhandled browser exceptions: ' + errors.join('; '));
+  console.log(
+    JSON.stringify({ status: 'passed', checks, browser: await browser.version() }, null, 2),
+  );
 } finally {
-  await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));
+  await browser.close();
+  server.closeAllConnections();
+  await new Promise((r) => server.close(r));
 }

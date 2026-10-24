@@ -1,2 +1,18 @@
-import {candidateDomain} from './candidate-domain.js';
-export function marginals(scorer,ids){candidateDomain(scorer,ids);const {length,colors}=scorer.rules;const position=Array.from({length},()=>Array(colors).fill(0)),presence=Array(colors).fill(0);for(const id of ids){const c=scorer.codes[id];for(let i=0;i<length;i++)position[i][c[i]]++;for(const x of new Set(c))presence[x]++;}return {count:ids.length,position:position.map(row=>row.map(x=>ids.length?x/ids.length:0)),presence:presence.map(x=>ids.length?x/ids.length:0),forced:position.map(row=>ids.length?row.findIndex(x=>x===ids.length):-1)};}
+import { candidateDomain } from './candidate-domain.js';
+export function marginals(scorer, ids) {
+  candidateDomain(scorer, ids);
+  const { length, colors } = scorer.rules;
+  const position = Array.from({ length }, () => Array(colors).fill(0)),
+    presence = Array(colors).fill(0);
+  for (const id of ids) {
+    const c = scorer.codes[id];
+    for (let i = 0; i < length; i++) position[i][c[i]]++;
+    for (const x of new Set(c)) presence[x]++;
+  }
+  return {
+    count: ids.length,
+    position: position.map((row) => row.map((x) => (ids.length ? x / ids.length : 0))),
+    presence: presence.map((x) => (ids.length ? x / ids.length : 0)),
+    forced: position.map((row) => (ids.length ? row.findIndex((x) => x === ids.length) : -1)),
+  };
+}

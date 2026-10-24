@@ -1,19 +1,19 @@
 # Cipher conventions and search
 
-| Mode | Key | Formatting and alphabet |
-| --- | --- | --- |
-| Caesar | integer shift | ASCII letters transformed; case/punctuation retained |
-| Atbash | none | A↔Z; case/punctuation retained |
-| Affine | invertible a mod 26 and offset b | y = ax+b mod 26; 312 keys |
-| Vigenère | repeating letter key | y = x+k mod 26 |
-| Beaufort | repeating letter key | y = k−x mod 26; reciprocal |
-| Variant Beaufort | repeating letter key | y = x−k mod 26 |
-| Plaintext autokey | initial letter key | key extends from original/recovered plaintext |
-| Substitution | plaintext-to-cipher A–Z permutation | inverse mapping for decryption |
-| Rail fence | 2–20 rails | whole Unicode code points, spaces included |
-| Columnar | read-order permutation | whole code points; ragged columns, no padding |
-| Polybius | keyword square | normalized uppercase; J folds to I; pairs 11–55 |
-| Bifid | keyword square and period | normalized uppercase; J folds to I; ragged final period |
+| Mode              | Key                                 | Formatting and alphabet                                 |
+| ----------------- | ----------------------------------- | ------------------------------------------------------- |
+| Caesar            | integer shift                       | ASCII letters transformed; case/punctuation retained    |
+| Atbash            | none                                | A↔Z; case/punctuation retained                         |
+| Affine            | invertible a mod 26 and offset b    | y = ax+b mod 26; 312 keys                               |
+| Vigenère          | repeating letter key                | y = x+k mod 26                                          |
+| Beaufort          | repeating letter key                | y = k−x mod 26; reciprocal                              |
+| Variant Beaufort  | repeating letter key                | y = x−k mod 26                                          |
+| Plaintext autokey | initial letter key                  | key extends from original/recovered plaintext           |
+| Substitution      | plaintext-to-cipher A–Z permutation | inverse mapping for decryption                          |
+| Rail fence        | 2–20 rails                          | whole Unicode code points, spaces included              |
+| Columnar          | read-order permutation              | whole code points; ragged columns, no padding           |
+| Polybius          | keyword square                      | normalized uppercase; J folds to I; pairs 11–55         |
+| Bifid             | keyword square and period           | normalized uppercase; J folds to I; ragged final period |
 
 Repeating keys advance only on ASCII letters. Non-ASCII characters remain untouched by format-preserving substitutions. Analysis filters to ASCII letters before case conversion, so Unicode case expansions do not create extra analyzed symbols. Polybius/Bifid intentionally discard spaces and punctuation. Encryption of a J cannot later distinguish it from I. Column order [2,0,1] means read column 2, then 0, then 1; it is not a rank assigned to each physical column.
 

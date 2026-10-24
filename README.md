@@ -28,9 +28,7 @@ The library also exposes caller-supplied word-dictionary deduction, bijective wo
 ```js
 import { createScorer, replay, rankGuesses, vigenere } from './src/index.js';
 const scorer = createScorer(); // four positions, six symbols, repeats enabled
-const state = replay(scorer, [
-  { guess: [0, 0, 1, 1], response: { exact: 0, misplaced: 1 } },
-]);
+const state = replay(scorer, [{ guess: [0, 0, 1, 1], response: { exact: 0, misplaced: 1 } }]);
 const ranking = rankGuesses(scorer, state.ids, { strategy: 'minimax' });
 console.log(ranking.rows[0], ranking.exactGlobal);
 console.log(vigenere('LXFOPV EF RNHR', 'LEMON', true));

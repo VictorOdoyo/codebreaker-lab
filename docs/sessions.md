@@ -6,10 +6,8 @@ A browser deduction case is portable JSON. Save case exports the active rules, a
 {
   "version": 1,
   "kind": "deduction",
-  "rules": {"length": 4, "colors": 6, "repeats": true},
-  "history": [
-    {"guess": [0,0,1,1], "response": {"exact": 0, "misplaced": 1}}
-  ],
+  "rules": { "length": 4, "colors": 6, "repeats": true },
+  "history": [{ "guess": [0, 0, 1, 1], "response": { "exact": 0, "misplaced": 1 } }],
   "strategy": "minimax",
   "pool": "all"
 }

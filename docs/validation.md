@@ -2,19 +2,19 @@
 
 ## Node regressions
 
-npm test discovers sorted test/*.test.js files with Node's built-in test runner. Tests cover known cipher vectors, all affine keys, ragged transposition round trips, duplicate feedback, candidate preservation, budget statuses, lock constraints, replay, conflict irreducibility, HTTP boundaries, and exhaustive small-domain invariants. The standard-policy regression traverses all 1,296 secrets and requires a complete audit with maximum five turns.
+npm test discovers sorted test/\*.test.js files with Node's built-in test runner. Tests cover known cipher vectors, all affine keys, ragged transposition round trips, duplicate feedback, candidate preservation, budget statuses, lock constraints, replay, conflict irreducibility, HTTP boundaries, and exhaustive small-domain invariants. The standard-policy regression traverses all 1,296 secrets and requires a complete audit with maximum five turns.
 
 ## Independent Python references
 
 python validation/reference_oracles.py constructs **8,971 cases** and sends one JSON batch to validation/bridge.mjs. Python uses its own implementations and standard library; it does not import or translate JavaScript results into expected values.
 
-| Family | Cases | Independent basis |
-| --- | ---: | --- |
-| Exact/misplaced feedback | 1,729 | Counter intersection on nonmatching residuals |
-| Word feedback | 6,561 | Exhaustive pairs of 81 four-letter words; explicit available-position removal |
-| Cipher transforms | 628 | Modular formulas and independent row/column construction |
-| Statistics | 50 | Seeded samples, direct ordered-pair IC and empirical entropy |
-| Ranking | 3 | Independent brute-force branching and deterministic tie ordering |
+| Family                   | Cases | Independent basis                                                             |
+| ------------------------ | ----: | ----------------------------------------------------------------------------- |
+| Exact/misplaced feedback | 1,729 | Counter intersection on nonmatching residuals                                 |
+| Word feedback            | 6,561 | Exhaustive pairs of 81 four-letter words; explicit available-position removal |
+| Cipher transforms        |   628 | Modular formulas and independent row/column construction                      |
+| Statistics               |    50 | Seeded samples, direct ordered-pair IC and empirical entropy                  |
+| Ranking                  |     3 | Independent brute-force branching and deterministic tie ordering              |
 
 Floating comparisons use 1e−12 absolute tolerance; categorical/transform results use exact equality. NODE_BINARY optionally selects the Node executable. Python's random seed is fixed at 2026. These are cross-implementation correctness checks, not evidence of practical cryptanalytic success on arbitrary messages.
 

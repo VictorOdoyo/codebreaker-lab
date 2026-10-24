@@ -1,5 +1,45 @@
-import {createScorer} from './scorer.js';
-import {solveSecret} from './play.js';
-import {random,sample} from './rng.js';
-import {integer} from './validate.js';
-export function compareStrategies(input={}, {seed=42,secrets=20,strategies=['minimax','entropy','expected'],pool='all'}={}){integer(secrets,1,50,'sample count');if(!Array.isArray(strategies)||!strategies.length||strategies.length>3||strategies.some(s=>!['minimax','entropy','expected'].includes(s)))throw new RangeError('Invalid strategies');const scorer=createScorer(input),ids=sample(scorer.codes.map((_,i)=>i),Math.min(secrets,scorer.codes.length),random(seed));const rows=strategies.map(strategy=>{const runs=ids.map(id=>({secret:scorer.codes[id],...solveSecret(scorer,scorer.codes[id],{strategy,pool})})),solved=runs.filter(r=>r.status==='solved');return {strategy,solved:solved.length,total:runs.length,mean:solved.reduce((a,r)=>a+r.trace.length,0)/(solved.length||1),worst:Math.max(0,...solved.map(r=>r.trace.length)),runs};});return {seed,rules:scorer.rules,secretIds:ids,rows,scope:'seeded sample, not exhaustive'};}
+import { createScorer } from './scorer.js';
+import { solveSecret } from './play.js';
+import { random, sample } from './rng.js';
+import { integer } from './validate.js';
+export function compareStrategies(
+  input = {},
+  { seed = 42, secrets = 20, strategies = ['minimax', 'entropy', 'expected'], pool = 'all' } = {},
+) {
+  integer(secrets, 1, 50, 'sample count');
+  if (
+    !Array.isArray(strategies) ||
+    !strategies.length ||
+    strategies.length > 3 ||
+    strategies.some((s) => !['minimax', 'entropy', 'expected'].includes(s))
+  )
+    throw new RangeError('Invalid strategies');
+  const scorer = createScorer(input),
+    ids = sample(
+      scorer.codes.map((_, i) => i),
+      Math.min(secrets, scorer.codes.length),
+      random(seed),
+    );
+  const rows = strategies.map((strategy) => {
+    const runs = ids.map((id) => ({
+        secret: scorer.codes[id],
+        ...solveSecret(scorer, scorer.codes[id], { strategy, pool }),
+      })),
+      solved = runs.filter((r) => r.status === 'solved');
+    return {
+      strategy,
+      solved: solved.length,
+      total: runs.length,
+      mean: solved.reduce((a, r) => a + r.trace.length, 0) / (solved.length || 1),
+      worst: Math.max(0, ...solved.map((r) => r.trace.length)),
+      runs,
+    };
+  });
+  return {
+    seed,
+    rules: scorer.rules,
+    secretIds: ids,
+    rows,
+    scope: 'seeded sample, not exhaustive',
+  };
+}

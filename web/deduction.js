@@ -1,21 +1,276 @@
-import {DeductionSession,parseCode,adversarialResponse,encodeSession,decodeSession,transcriptCSV} from '../src/index.js';
-import {DEMO_HISTORY} from '../src/challenges.js';
-import {$,el,replace,pegs,number,download} from './dom.js';
-export function setupDeduction(compute,status){let session=new DeductionSession({},DEMO_HISTORY),result;
-const error=message=>$('deduction-error').textContent=message;
-function options(){return {strategy:$('strategy').value,pool:$('pool').value};}
-function fill(code){$('guess').value=code.join('');$('guess').focus();}
-function paint(){const state=session.state;replace($('history'),state.history.map((h,i)=>el('div',{class:'history-row'},el('span',{class:'turn'},String(i+1).padStart(2,'0')),pegs(h.guess),el('span',{class:'reply'},el('span',{},el('b',{},h.response.exact),' exact'),el('span',{},el('b',{},h.response.misplaced),' away')),el('span',{class:'history-left'},state.trace[i+1]))));$('undo').disabled=!state.history.length;}
-function render(r){result=r;const count=r.state.ids.length,total=session.scorer.codes.length;$('heatmap').className='heatmap cols-'+session.scorer.rules.colors;$('remaining').textContent=count;$('removed').textContent=number(100*(1-count/total),1)+'%';$('bits').textContent=number(Math.log2(count));$('case-state').textContent=r.evidence.status.toUpperCase();replace($('candidate-grid'),r.candidates.slice(0,24).map(c=>el('button',{class:'candidate',type:'button','aria-label':'Use candidate '+c.join(''),onclick:()=>fill(c)},pegs(c,true))));$('candidate-caption').textContent='Showing '+Math.min(count,24)+' of '+count;replace($('heatmap'),r.marginals.position.map((row,p)=>el('div',{class:'heatmap-row'},el('span',{},'POS '+(p+1)),row.map((v,c)=>el('span',{class:'heat-cell heat-'+Math.min(5,Math.ceil(v*5)),title:'Symbol '+c+': '+number(100*v,1)+'%'},c+' / '+Math.round(v*100)+'%')))));const best=r.ranking.rows[0];replace($('best-pegs'),best?pegs(best.guess):el('p',{},'No guess fits the search budget.'));$('best-worst').textContent=best?.worstCase??'—';$('best-entropy').textContent=best?number(best.entropy):'—';$('best-reason').textContent=best?(best.candidate?'This code is still a possible secret. ':'This code is an information probe. ')+(options().strategy==='minimax'?'It minimizes the largest reply branch in the searched pool.':options().strategy==='entropy'?'It maximizes expected information in the searched pool.':'It minimizes expected survivors in the searched pool.'):'Increase the budget or reduce the search space.';$('use-best').disabled=!best;const branches=[...r.branches].sort((a,b)=>b.count-a.count);replace($('branches'),branches.slice(0,9).map(b=>el('div',{class:'branch-row'},el('span',{},b.response.exact+' / '+b.response.misplaced),el('progress',{max:count,value:b.count,'aria-label':b.count+' candidates for '+b.response.exact+' exact and '+b.response.misplaced+' misplaced'}),el('span',{},b.count))));$('branch-total').textContent=branches.length+' BRANCHES';replace($('alternatives'),r.ranking.rows.slice(1,5).map(row=>el('button',{class:'alternative full',onclick:()=>fill(row.guess)},pegs(row.guess,true),el('span',{class:'mono'},row.worstCase+' worst'))));$('search-scope').textContent=(r.ranking.exactGlobal?'EXACT · ALL CODES':r.ranking.complete?'COMPLETE · RESTRICTED POOL':'PARTIAL SEARCH')+' / '+r.ranking.searched.toLocaleString()+' guesses · '+r.ranking.operations.toLocaleString()+' comparisons';}
-async function refresh(){paint();error('');try{const r=await compute({action:'deduction',input:{rules:session.scorer.rules,history:session.state.history},options:options()},'Partitioning the remaining possibilities…');render(r);status('Evidence updated · '+r.state.ids.length+' consistent candidates.');}catch(e){error(e.message);}}
-function sync(){const r=session.scorer.rules;$('length').value=String(r.length);$('colors').value=String(r.colors);$('repeats').checked=r.repeats;$('guess').maxLength=r.length;$('guess').placeholder='e.g. '+Array.from({length:r.length},(_,i)=>i%r.colors).join('');$('exact').max=r.length;$('misplaced').max=r.length;}
-$('new-game').onclick=()=>{try{session=new DeductionSession({length:Number($('length').value),colors:Number($('colors').value),repeats:$('repeats').checked});sync();refresh();}catch(e){error(e.message);}};
-for(const id of ['length','colors','repeats'])$(id).onchange=()=>status('Case settings changed. Select New case to apply them.');
-$('load-demo').onclick=()=>{session=new DeductionSession({},DEMO_HISTORY);sync();refresh();};
-$('undo').onclick=()=>{session.undo();refresh();};$('recompute').onclick=refresh;$('strategy').onchange=refresh;$('pool').onchange=refresh;
-$('guess-form').onsubmit=e=>{e.preventDefault();try{const guess=parseCode($('guess').value,session.scorer.rules),response={exact:Number($('exact').value),misplaced:Number($('misplaced').value)},r=session.add(guess,response);if(!r.accepted){error('Conflicting feedback in rows '+r.conflict.rows.map(i=>i+1).join(', ')+'. The new reply was not added.');return;}refresh();}catch(err){error(err.message);}};
-$('use-best').onclick=()=>{if(result?.ranking.rows[0])fill(result.ranking.rows[0].guess);};
-$('adversary').onclick=()=>{try{const guess=parseCode($('guess').value||result.ranking.rows[0].guess.join(''),session.scorer.rules),r=adversarialResponse(session.scorer,session.state.ids,guess);fill(guess);$('exact').value=r.response.exact;$('misplaced').value=r.response.misplaced;session.add(guess,r.response);refresh();}catch(e){error(e.message);}};
-$('save-session').onclick=()=>download('cipherhouse-case.json',encodeSession({rules:session.scorer.rules,history:session.state.history,...options()}));
-$('import-session').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>100000)throw new RangeError('Session exceeds 100 KB');const s=decodeSession(await file.text());session=new DeductionSession(s.rules,s.history);$('strategy').value=s.strategy;$('pool').value=s.pool;sync();await refresh();}catch(err){error(err.message);}finally{e.target.value='';}};
-$('export-transcript').onclick=()=>download('cipherhouse-transcript.csv',transcriptCSV(session.state.history),'text/csv');sync();return {refresh};}
+import {
+  DeductionSession,
+  parseCode,
+  adversarialResponse,
+  encodeSession,
+  decodeSession,
+  transcriptCSV,
+} from '../src/index.js';
+import { DEMO_HISTORY } from '../src/challenges.js';
+import { $, el, replace, pegs, number, download } from './dom.js';
+export function setupDeduction(compute, status) {
+  let session = new DeductionSession({}, DEMO_HISTORY),
+    result;
+  const error = (message) => ($('deduction-error').textContent = message);
+  function options() {
+    return { strategy: $('strategy').value, pool: $('pool').value };
+  }
+  function fill(code) {
+    $('guess').value = code.join('');
+    $('guess').focus();
+  }
+  function paint() {
+    const state = session.state;
+    replace(
+      $('history'),
+      state.history.map((h, i) =>
+        el(
+          'div',
+          { class: 'history-row' },
+          el('span', { class: 'turn' }, String(i + 1).padStart(2, '0')),
+          pegs(h.guess),
+          el(
+            'span',
+            { class: 'reply' },
+            el('span', {}, el('b', {}, h.response.exact), ' exact'),
+            el('span', {}, el('b', {}, h.response.misplaced), ' away'),
+          ),
+          el('span', { class: 'history-left' }, state.trace[i + 1]),
+        ),
+      ),
+    );
+    $('undo').disabled = !state.history.length;
+  }
+  function render(r) {
+    result = r;
+    const count = r.state.ids.length,
+      total = session.scorer.codes.length;
+    $('heatmap').className = 'heatmap cols-' + session.scorer.rules.colors;
+    $('remaining').textContent = count;
+    $('removed').textContent = number(100 * (1 - count / total), 1) + '%';
+    $('bits').textContent = number(Math.log2(count));
+    $('case-state').textContent = r.evidence.status.toUpperCase();
+    replace(
+      $('candidate-grid'),
+      r.candidates.slice(0, 24).map((c) =>
+        el(
+          'button',
+          {
+            class: 'candidate',
+            type: 'button',
+            'aria-label': 'Use candidate ' + c.join(''),
+            onclick: () => fill(c),
+          },
+          pegs(c, true),
+        ),
+      ),
+    );
+    $('candidate-caption').textContent = 'Showing ' + Math.min(count, 24) + ' of ' + count;
+    replace(
+      $('heatmap'),
+      r.marginals.position.map((row, p) =>
+        el(
+          'div',
+          { class: 'heatmap-row' },
+          el('span', {}, 'POS ' + (p + 1)),
+          row.map((v, c) =>
+            el(
+              'span',
+              {
+                class: 'heat-cell heat-' + Math.min(5, Math.ceil(v * 5)),
+                title: 'Symbol ' + c + ': ' + number(100 * v, 1) + '%',
+              },
+              c + ' / ' + Math.round(v * 100) + '%',
+            ),
+          ),
+        ),
+      ),
+    );
+    const best = r.ranking.rows[0];
+    replace(
+      $('best-pegs'),
+      best ? pegs(best.guess) : el('p', {}, 'No guess fits the search budget.'),
+    );
+    $('best-worst').textContent = best?.worstCase ?? '—';
+    $('best-entropy').textContent = best ? number(best.entropy) : '—';
+    $('best-reason').textContent = best
+      ? (best.candidate
+          ? 'This code is still a possible secret. '
+          : 'This code is an information probe. ') +
+        (options().strategy === 'minimax'
+          ? 'It minimizes the largest reply branch in the searched pool.'
+          : options().strategy === 'entropy'
+            ? 'It maximizes expected information in the searched pool.'
+            : 'It minimizes expected survivors in the searched pool.')
+      : 'Increase the budget or reduce the search space.';
+    $('use-best').disabled = !best;
+    const branches = [...r.branches].sort((a, b) => b.count - a.count);
+    replace(
+      $('branches'),
+      branches.slice(0, 9).map((b) =>
+        el(
+          'div',
+          { class: 'branch-row' },
+          el('span', {}, b.response.exact + ' / ' + b.response.misplaced),
+          el('progress', {
+            max: count,
+            value: b.count,
+            'aria-label':
+              b.count +
+              ' candidates for ' +
+              b.response.exact +
+              ' exact and ' +
+              b.response.misplaced +
+              ' misplaced',
+          }),
+          el('span', {}, b.count),
+        ),
+      ),
+    );
+    $('branch-total').textContent = branches.length + ' BRANCHES';
+    replace(
+      $('alternatives'),
+      r.ranking.rows
+        .slice(1, 5)
+        .map((row) =>
+          el(
+            'button',
+            { class: 'alternative full', onclick: () => fill(row.guess) },
+            pegs(row.guess, true),
+            el('span', { class: 'mono' }, row.worstCase + ' worst'),
+          ),
+        ),
+    );
+    $('search-scope').textContent =
+      (r.ranking.exactGlobal
+        ? 'EXACT · ALL CODES'
+        : r.ranking.complete
+          ? 'COMPLETE · RESTRICTED POOL'
+          : 'PARTIAL SEARCH') +
+      ' / ' +
+      r.ranking.searched.toLocaleString() +
+      ' guesses · ' +
+      r.ranking.operations.toLocaleString() +
+      ' comparisons';
+  }
+  async function refresh() {
+    paint();
+    error('');
+    try {
+      const r = await compute(
+        {
+          action: 'deduction',
+          input: { rules: session.scorer.rules, history: session.state.history },
+          options: options(),
+        },
+        'Partitioning the remaining possibilities…',
+      );
+      render(r);
+      status('Evidence updated · ' + r.state.ids.length + ' consistent candidates.');
+    } catch (e) {
+      error(e.message);
+    }
+  }
+  function sync() {
+    const r = session.scorer.rules;
+    $('length').value = String(r.length);
+    $('colors').value = String(r.colors);
+    $('repeats').checked = r.repeats;
+    $('guess').maxLength = r.length;
+    $('guess').placeholder =
+      'e.g. ' + Array.from({ length: r.length }, (_, i) => i % r.colors).join('');
+    $('exact').max = r.length;
+    $('misplaced').max = r.length;
+  }
+  $('new-game').onclick = () => {
+    try {
+      session = new DeductionSession({
+        length: Number($('length').value),
+        colors: Number($('colors').value),
+        repeats: $('repeats').checked,
+      });
+      sync();
+      refresh();
+    } catch (e) {
+      error(e.message);
+    }
+  };
+  for (const id of ['length', 'colors', 'repeats'])
+    $(id).onchange = () => status('Case settings changed. Select New case to apply them.');
+  $('load-demo').onclick = () => {
+    session = new DeductionSession({}, DEMO_HISTORY);
+    sync();
+    refresh();
+  };
+  $('undo').onclick = () => {
+    session.undo();
+    refresh();
+  };
+  $('recompute').onclick = refresh;
+  $('strategy').onchange = refresh;
+  $('pool').onchange = refresh;
+  $('guess-form').onsubmit = (e) => {
+    e.preventDefault();
+    try {
+      const guess = parseCode($('guess').value, session.scorer.rules),
+        response = { exact: Number($('exact').value), misplaced: Number($('misplaced').value) },
+        r = session.add(guess, response);
+      if (!r.accepted) {
+        error(
+          'Conflicting feedback in rows ' +
+            r.conflict.rows.map((i) => i + 1).join(', ') +
+            '. The new reply was not added.',
+        );
+        return;
+      }
+      refresh();
+    } catch (err) {
+      error(err.message);
+    }
+  };
+  $('use-best').onclick = () => {
+    if (result?.ranking.rows[0]) fill(result.ranking.rows[0].guess);
+  };
+  $('adversary').onclick = () => {
+    try {
+      const guess = parseCode(
+          $('guess').value || result.ranking.rows[0].guess.join(''),
+          session.scorer.rules,
+        ),
+        r = adversarialResponse(session.scorer, session.state.ids, guess);
+      fill(guess);
+      $('exact').value = r.response.exact;
+      $('misplaced').value = r.response.misplaced;
+      session.add(guess, r.response);
+      refresh();
+    } catch (e) {
+      error(e.message);
+    }
+  };
+  $('save-session').onclick = () =>
+    download(
+      'cipherhouse-case.json',
+      encodeSession({ rules: session.scorer.rules, history: session.state.history, ...options() }),
+    );
+  $('import-session').onchange = async (e) => {
+    try {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 100000) throw new RangeError('Session exceeds 100 KB');
+      const s = decodeSession(await file.text());
+      session = new DeductionSession(s.rules, s.history);
+      $('strategy').value = s.strategy;
+      $('pool').value = s.pool;
+      sync();
+      await refresh();
+    } catch (err) {
+      error(err.message);
+    } finally {
+      e.target.value = '';
+    }
+  };
+  $('export-transcript').onclick = () =>
+    download('cipherhouse-transcript.csv', transcriptCSV(session.state.history), 'text/csv');
+  sync();
+  return { refresh };
+}

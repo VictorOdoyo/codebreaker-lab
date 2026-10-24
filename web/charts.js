@@ -1,4 +1,68 @@
-const NS='http://www.w3.org/2000/svg';
-function node(tag,attrs={},label){const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);if(label!==undefined)e.textContent=label;return e;}
-export function bars(rows,{value='value',label='label',max=null,title='Distribution'}={}){const width=640,height=190,pad=24,top=14,base=height-30,peak=max??Math.max(1e-12,...rows.map(r=>r[value])),svg=node('svg',{viewBox:'0 0 '+width+' '+height,role:'img','aria-label':title});svg.append(node('title',{},title));const step=(width-2*pad)/Math.max(1,rows.length);rows.forEach((r,i)=>{const h=(base-top)*r[value]/peak,x=pad+i*step;svg.append(node('rect',{x:x+step*.12,y:base-h,width:step*.76,height:Math.max(0,h),rx:3,class:'chart-bar'}));svg.append(node('text',{x:x+step*.5,y:height-10,'text-anchor':'middle',class:'chart-label'},r[label]));const t=node('title',{},r[label]+': '+r[value]);svg.lastChild.previousSibling.append(t);});svg.append(node('line',{x1:pad,y1:base,x2:width-pad,y2:base,class:'chart-axis'}));return svg;}
-export function line(values,title='Progress'){const width=640,height=190,pad=24,lo=Math.min(...values),hi=Math.max(...values),points=values.map((v,i)=>(pad+i*(width-2*pad)/Math.max(1,values.length-1))+','+(height-pad-(v-lo)*(height-2*pad)/(hi-lo||1))).join(' '),svg=node('svg',{viewBox:'0 0 '+width+' '+height,role:'img','aria-label':title});svg.append(node('title',{},title),node('polyline',{points,fill:'none',class:'chart-line'}));return svg;}
+const NS = 'http://www.w3.org/2000/svg';
+function node(tag, attrs = {}, label) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (label !== undefined) e.textContent = label;
+  return e;
+}
+export function bars(
+  rows,
+  { value = 'value', label = 'label', max = null, title = 'Distribution' } = {},
+) {
+  const width = 640,
+    height = 190,
+    pad = 24,
+    top = 14,
+    base = height - 30,
+    peak = max ?? Math.max(1e-12, ...rows.map((r) => r[value])),
+    svg = node('svg', { viewBox: '0 0 ' + width + ' ' + height, role: 'img', 'aria-label': title });
+  svg.append(node('title', {}, title));
+  const step = (width - 2 * pad) / Math.max(1, rows.length);
+  rows.forEach((r, i) => {
+    const h = ((base - top) * r[value]) / peak,
+      x = pad + i * step;
+    svg.append(
+      node('rect', {
+        x: x + step * 0.12,
+        y: base - h,
+        width: step * 0.76,
+        height: Math.max(0, h),
+        rx: 3,
+        class: 'chart-bar',
+      }),
+    );
+    svg.append(
+      node(
+        'text',
+        { x: x + step * 0.5, y: height - 10, 'text-anchor': 'middle', class: 'chart-label' },
+        r[label],
+      ),
+    );
+    const t = node('title', {}, r[label] + ': ' + r[value]);
+    svg.lastChild.previousSibling.append(t);
+  });
+  svg.append(node('line', { x1: pad, y1: base, x2: width - pad, y2: base, class: 'chart-axis' }));
+  return svg;
+}
+export function line(values, title = 'Progress') {
+  const width = 640,
+    height = 190,
+    pad = 24,
+    lo = Math.min(...values),
+    hi = Math.max(...values),
+    points = values
+      .map(
+        (v, i) =>
+          pad +
+          (i * (width - 2 * pad)) / Math.max(1, values.length - 1) +
+          ',' +
+          (height - pad - ((v - lo) * (height - 2 * pad)) / (hi - lo || 1)),
+      )
+      .join(' '),
+    svg = node('svg', { viewBox: '0 0 ' + width + ' ' + height, role: 'img', 'aria-label': title });
+  svg.append(
+    node('title', {}, title),
+    node('polyline', { points, fill: 'none', class: 'chart-line' }),
+  );
+  return svg;
+}
