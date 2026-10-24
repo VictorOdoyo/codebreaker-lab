@@ -1,0 +1,3 @@
+import {text,integer} from './validate.js';
+export function railPath(n,rails){integer(rails,2,20,'rails');return Array.from({length:n},(_,i)=>{const t=i%(2*rails-2);return t<rails?t:2*rails-2-t;});}
+export function railFence(value,rails=3,decrypt=false){text(value);const chars=Array.from(value),path=railPath(chars.length,rails);if(!decrypt)return Array.from({length:rails},(_,r)=>chars.filter((_,i)=>path[i]===r).join('')).join('');const rows=Array.from({length:rails},()=>[]);let at=0;for(let r=0;r<rails;r++){const count=path.filter(x=>x===r).length;rows[r]=chars.slice(at,at+count);at+=count;}const used=Array(rails).fill(0);return path.map(r=>rows[r][used[r]++]).join('');}
