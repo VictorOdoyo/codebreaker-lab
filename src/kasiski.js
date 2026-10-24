@@ -1,0 +1,3 @@
+import {ngrams} from './ngrams.js';
+import {integer} from './validate.js';
+export function kasiski(value,{minGram=3,maxGram=5,maxPeriod=20}={}){integer(minGram,2,6);integer(maxGram,minGram,8);integer(maxPeriod,2,64);const repeats=[],votes=Array(maxPeriod+1).fill(0);for(let n=minGram;n<=maxGram;n++)for(const row of ngrams(value,n,1000)){if(row.count<2)continue;const distances=[];for(let i=1;i<row.positions.length;i++){const d=row.positions[i]-row.positions[i-1];distances.push(d);for(let p=2;p<=maxPeriod;p++)if(d%p===0)votes[p]+=n-1;}repeats.push({...row,distances});}return {repeats:repeats.slice(0,100),periods:votes.map((votes,period)=>({period,votes})).slice(2).sort((a,b)=>b.votes-a.votes||a.period-b.period)};}
