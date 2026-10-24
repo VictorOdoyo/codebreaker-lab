@@ -1,0 +1,4 @@
+import {text,integer} from './validate.js';
+export function permutation(key){if(!Array.isArray(key)||key.length<2||key.length>10||new Set(key).size!==key.length)throw new RangeError('Column order must be a permutation of 2..10 columns');key.forEach(x=>integer(x,0,key.length-1,'column'));return key;}
+export function columnar(value,key=[2,0,1],decrypt=false){text(value);permutation(key);const chars=Array.from(value),w=key.length;if(!decrypt)return key.map(c=>chars.filter((_,i)=>i%w===c).join('')).join('');const columns=Array.from({length:w},()=>[]);let at=0;for(const c of key){const n=Math.floor(chars.length/w)+(c<chars.length%w?1:0);columns[c]=chars.slice(at,at+n);at+=n;}return chars.map((_,i)=>columns[i%w][Math.floor(i/w)]).join('');}
+export function columnKey(word){text(word,10);if(word.length<2)throw new RangeError('Keyword too short');return Array.from(word,(c,i)=>({c,i})).sort((a,b)=>a.c<b.c?-1:a.c>b.c?1:a.i-b.i).map(x=>x.i);}
